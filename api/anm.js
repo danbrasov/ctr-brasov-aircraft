@@ -55,6 +55,28 @@ export default async function handler(req,res){
       });
     }
     stations.sort((a,b)=>a.distanceKm-b.distanceKm);
+
+    // ANM public feed does not expose station elevation. Enrich nearby stations
+    // with terrain elevation from Open-Meteo / Copernicus DEM GLO-90.
+    if(stations.length){
+      try{
+        const lats=stations.map(s=>s.lat).join(',');
+        const lons=stations.map(s=>s.lon).join(',');
+        const er=await fetch('https://api.open-meteo.com/v1/elevation?latitude='+encodeURIComponent(lats)+'&longitude='+encodeURIComponent(lons),{
+          headers:{'Accept':'application/json','User-Agent':'ctr-brasov-aircraft/1.0'}
+        });
+        if(er.ok){
+          const ed=await er.json(),elev=Array.isArray(ed.elevation)?ed.elevation:[];
+          stations.forEach((s,i)=>{
+            const v=Number(elev[i]);
+            if(Number.isFinite(v))s.elevationM=Math.round(v);
+          });
+        }
+      }catch(e){
+        // Elevation is optional; weather data remains usable without it.
+      }
+    }
+
     res.setHeader('Cache-Control','s-maxage=300, stale-while-revalidate=300');
     return res.status(200).json({ok:true,checkedAt:d.date||new Date().toISOString(),radiusKm,stations,source:'ANM Romania'});
   }catch(err){
