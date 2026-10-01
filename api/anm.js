@@ -56,6 +56,12 @@ export default async function handler(req,res){
     }
     stations.sort((a,b)=>a.distanceKm-b.distanceKm);
 
+    // Known station elevations from published station metadata.
+    for(const s of stations){
+      const n=String(s.name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+      if(n==='VARFUL OMU') s.elevationM=2504;
+    }
+
     // ANM public feed does not expose station elevation. Enrich nearby stations
     // with terrain elevation from Open-Meteo / Copernicus DEM GLO-90.
     if(stations.length){
