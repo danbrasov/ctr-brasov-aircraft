@@ -10,6 +10,8 @@ export default async function handler(req, res) {
     .replace(/<style[\s\S]*?<\/style>/gi,' ')
     .replace(/<[^>]+>/g,' ')
     .replace(/&nbsp;/gi,' ')
+    .replace(/&deg;/gi,'°')
+    .replace(/&#176;/gi,'°')
     .replace(/&amp;/gi,'&')
     .replace(/\s+/g,' ')
     .trim();
